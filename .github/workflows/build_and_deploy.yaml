@@ -1,89 +1,47 @@
-name: Build and deploy
+name: ci
 
-on:
-  push:
-    branch:
-      - "dev_38"
-
+on: push
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      -
+        name: Checkout
         uses: actions/checkout@v3
-      - name: Login to Docker Hub
+      -
+        name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Set up Docker Buildx
+      -
+        name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build and push
+      -
+        name: Build and push
         uses: docker/build-push-action@v4
         with:
           context: .
-          target: prod_image
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/homework_38:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/diploma2:latest
 
   deploy:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
     steps:
-      - name: clone code
-        uses: actions/checkout@v2
-      - name: executing remote ssh commands to set env
-        uses: appleboy/ssh-action@master
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: |
+            mkdir deploy
+            mv docker-compose-ci.yaml deploy/docker-compose.yaml
+            mv nginx.conf deploy/nginx.conf
+      - uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script: |
-            echo DEBUG=False > todolist/.env
-            echo POSTGRES_DB=${{ secrets.POSTGRES_DB }} >> todolist/.env
-            echo POSTGRES_NAME=course_7 >> todolist/.env
-            echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> todolist/.env
-            echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> todolist/.env
-            echo POSTGRES_HOST=${{ secrets.HOST }} >> todolist/.env
-            echo POSTGRES_PORT=5432 >> todolist/.env
-            echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> todolist/.env
-            echo VK_OAUTH_ID=${{ secrets.VK_OAUTH_ID }} >> todolist/.env
-            echo VK_OAUTH_SECRET_KEY=${{ secrets.VK_OAUTH_SECRET_KEY }} >> todolist/.env
-            echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> todolist/.env
-      - name: render configs
-        run: |
-          mkdir -p home/deploy
-          mv deploy/docker-compose-ci.yaml deploy/docker-compose.yaml
-      - name: copy files to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
           source: "deploy/*"
           target: "todolist"
           strip_components: 1
-
-      - name: deploy app
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script: |
-            cd todolist
-            export $(xargs <.env)
-            envsubst < docker-compose.yaml
-            echo ${{ secrets.PASSWORD }} | sudo -S docker-compose down
-            echo ${{ secrets.PASSWORD }} | sudo -S docker-compose pull
-            echo ${{ secrets.PASSWORD }} | sudo -S docker-compose up -d
-      - name: cleanup
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script: |
-            docker system prune -a -f

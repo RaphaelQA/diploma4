@@ -1,28 +1,25 @@
 [tool.poetry]
-name = "course-7-homework"
+name = "diploma5"
 version = "0.1.0"
 description = ""
-authors = ["Zidolch <yury.batin@gmail.com>"]
+authors = ["RafPC <g.raf1279@gmail.com>"]
 readme = "README.md"
-packages = [{include = "course_7_homework"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-django = "^4.1.7"
+python = "^3.11"
+django = "^4.2.4"
 django-environ = "^0.10.0"
-psycopg2-binary = "^2.9.5"
-gunicorn = "^20.1.0"
+psycopg2-binary = "^2.9.7"
+gunicorn = "^21.2.0"
 djangorestframework = "^3.14.0"
 social-auth-app-django = "^5.2.0"
-django-filter = "^23.1"
+django-filter = "^23.2"
 pytest-django = "^4.5.2"
 pytest-factoryboy = "^2.5.1"
-mypy = "^1.2.0"
-pydantic = "^1.10.7"
+mypy = "^1.5.1"
+pydantic = "^2.2.1"
 
 
-[tool.poetry.group.dev.dependencies]
-django-extensions = "^3.2.1"
 
 [build-system]
 requires = ["poetry-core"]
